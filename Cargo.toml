@@ -1,0 +1,7 @@
+[package]
+name = "ottar"
+version = "0.1.0"
+authors = ["Mathieu Demange <contact@mathieudemange.fr>"]
+edition = "2018"
+
+[dependencies]
