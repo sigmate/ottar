@@ -18,13 +18,28 @@
 //
 // Points for each Card is stored as u8 and is considered multiplied by 10.
 // This is because Rust doesn't provide the Hash derive macro for floats (for understandable reasons).
+//
+// What's needed next:
+// A common deck of card (and a method to generate one)
+// A Player struct
+// Some arbiter
+
+extern crate strum;
+#[macro_use] extern crate strum_macros;
 
 use console::style;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::fmt;
+use strum::IntoEnumIterator;
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+/*
+struct Deck {
+
+}
+*/
+
+#[derive(EnumIter, Clone, Copy, Eq, PartialEq, Hash, Debug)]
 enum Suit {
     Spade,
     Heart,
@@ -53,7 +68,7 @@ impl PartialOrd for Suit {
     }
 }
 
-#[derive(Eq, PartialEq, PartialOrd, Hash, Debug)]
+#[derive(EnumIter, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Debug)]
 enum Rank {
     Ace,
     Two,
@@ -92,7 +107,7 @@ impl fmt::Display for Rank {
     }
 }
 
-#[derive(Eq, PartialEq, PartialOrd, Hash, Debug)]
+#[derive(EnumIter, Clone, Copy, Eq, PartialEq, PartialOrd, Hash, Debug)]
 enum Trump {
     One,
     Two,
@@ -186,19 +201,73 @@ impl fmt::Display for Figure {
 }
 
 #[derive(Eq, PartialEq, PartialOrd, Hash, Debug)]
-struct Card(Figure, u8);
+struct Card(Figure);
+
+impl Card {
+    fn points(&self) -> u8 {
+        match self {
+            Card(Figure::Fool) => 45,
+            Card(Figure::Trump(Trump::One)) => 45,
+            Card(Figure::Trump(Trump::TwentyOne)) => 45,
+            Card(Figure::Base(_suit, rank)) => match rank {
+                Rank::Jack => 15,
+                Rank::Knight => 25,
+                Rank::Queen => 35,
+                Rank::King => 45,
+                _ => 5
+            },
+            _ => 5
+        }
+    }
+}
+
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+struct Deck {
+    set: HashSet<Card>,
+}
+
+impl Deck {
+    fn new() -> Self {
+        let mut deck = Self {
+            set: HashSet::new()
+        };
+        for suit in Suit::iter() {
+            for rank in Rank::iter() {
+                &deck.set.insert(Card(Figure::Base(suit, rank)));
+            }
+            
+        }
+        for trump in Trump::iter() {
+            &deck.set.insert(Card(Figure::Trump(trump)));
+        }
+        &deck.set.insert(Card(Figure::Fool));
+        deck
+    }
+    fn points(&self) -> u16 {
+        let mut res: u16 = 0;
+        for card in self.set.iter() {
+            res += card.points() as u16;
+        }
+        res
+    }
+}
+
+impl fmt::Display for Deck {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.set.iter().fold(String::new(), |mut acc, card| { acc.push_str(&card.to_string()); acc.push_str(" "); acc }))
+    }
+}
 
 fn main() {
-    println!(
-        "{} {} {} {} {} {} {}",
-        Figure::Base(Suit::Spade, Rank::Ace),
-        Figure::Base(Suit::Heart, Rank::Seven),
-        Figure::Base(Suit::Diamond, Rank::Queen),
-        Figure::Base(Suit::Club, Rank::King),
-        Figure::Trump(Trump::One),
-        Figure::Trump(Trump::TwentyOne),
-        Figure::Fool
-    );
+
+    let mut deck = Deck::new();
+    println!("{}", deck);
+
 }
 
 #[cfg(test)]
@@ -207,19 +276,19 @@ mod tests {
 
     #[test]
     fn test_card_equality() {
-        let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace), 5);
-        let card_b = Card(Figure::Base(Suit::Spade, Rank::Ace), 5);
+        let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace));
+        let card_b = Card(Figure::Base(Suit::Spade, Rank::Ace));
         assert_eq!(card_a, card_b);
     }
 
     #[test]
     fn test_card_nonequality() {
-        let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace), 5);
-        let card_b = Card(Figure::Base(Suit::Spade, Rank::Two), 5);
-        let card_c = Card(Figure::Base(Suit::Diamond, Rank::Ace), 5);
-        let card_d = Card(Figure::Trump(Trump::One), 45);
-        let card_e = Card(Figure::Trump(Trump::TwentyOne), 45);
-        let card_f = Card(Figure::Fool, 45);
+        let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace));
+        let card_b = Card(Figure::Base(Suit::Spade, Rank::Two));
+        let card_c = Card(Figure::Base(Suit::Diamond, Rank::Ace));
+        let card_d = Card(Figure::Trump(Trump::One));
+        let card_e = Card(Figure::Trump(Trump::TwentyOne));
+        let card_f = Card(Figure::Fool);
         assert_ne!(card_a, card_b);
         assert_ne!(card_a, card_c);
         assert_ne!(card_a, card_d);
@@ -230,12 +299,12 @@ mod tests {
 
     #[test]
     fn test_card_comparison() {
-        let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace), 5);
-        let card_b = Card(Figure::Base(Suit::Spade, Rank::Two), 5);
-        let card_c = Card(Figure::Base(Suit::Diamond, Rank::Ace), 5);
-        let card_d = Card(Figure::Trump(Trump::One), 45);
-        let card_e = Card(Figure::Trump(Trump::TwentyOne), 45);
-        let card_f = Card(Figure::Fool, 45);
+        let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace));
+        let card_b = Card(Figure::Base(Suit::Spade, Rank::Two));
+        let card_c = Card(Figure::Base(Suit::Diamond, Rank::Ace));
+        let card_d = Card(Figure::Trump(Trump::One));
+        let card_e = Card(Figure::Trump(Trump::TwentyOne));
+        let card_f = Card(Figure::Fool);
         assert!(card_b > card_a);
         assert!(card_a > card_c);
         assert!(card_d > card_a);
@@ -246,11 +315,11 @@ mod tests {
     #[test]
     fn test_card_unicity_in_hashmap() {
         let mut cards = HashSet::new();
-        cards.insert(Card(Figure::Base(Suit::Spade, Rank::Ace), 5));
-        cards.insert(Card(Figure::Trump(Trump::One), 45));
-        cards.insert(Card(Figure::Fool, 45));
+        cards.insert(Card(Figure::Base(Suit::Spade, Rank::Ace)));
+        cards.insert(Card(Figure::Trump(Trump::One)));
+        cards.insert(Card(Figure::Fool));
         // voluntarily trying to add an already existing card
-        cards.insert(Card(Figure::Base(Suit::Spade, Rank::Ace), 5));
+        cards.insert(Card(Figure::Base(Suit::Spade, Rank::Ace)));
         assert!(cards.len() == 3);
     }
 }
