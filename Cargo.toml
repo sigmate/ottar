@@ -5,3 +5,4 @@ authors = ["Mathieu Demange <contact@mathieudemange.fr>"]
 edition = "2018"
 
 [dependencies]
+console = "*"

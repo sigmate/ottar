@@ -4,6 +4,10 @@
 // Heart (coeur)
 // Trump (atout)
 
+// Unicode characters:
+// Fool: ★
+//
+
 // Notes:
 // Thoughts on a (Partial)Ord implementation for trick winner checking:
 // When comparing two cards, the first one is always assumed to have the
@@ -15,8 +19,9 @@
 // Points for each Card is stored as u8 and is considered multiplied by 10.
 // This is because Rust doesn't provide the Hash derive macro for floats (for understandable reasons).
 
-use std::collections::HashSet;
+use console::style;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::fmt;
 
 #[derive(Eq, PartialEq, Hash, Debug)]
@@ -24,14 +29,26 @@ enum Suit {
     Spade,
     Heart,
     Diamond,
-    Club
+    Club,
+}
+
+impl fmt::Display for Suit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Suit::Spade => write!(f, "♠"),
+            Suit::Heart => write!(f, "♥"),
+            Suit::Diamond => write!(f, "♦"),
+            Suit::Club => write!(f, "♣"),
+        }
+    }
 }
 
 impl PartialOrd for Suit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self == other {
-            true => Some(Ordering::Equal),
-            false => Some(Ordering::Greater)
+        if self == other {
+            Some(Ordering::Equal)
+        } else {
+            Some(Ordering::Greater)
         }
     }
 }
@@ -51,29 +68,119 @@ enum Rank {
     Jack,
     Knight,
     Queen,
-    King
+    King,
+}
+
+impl fmt::Display for Rank {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Rank::Ace => write!(f, " 1"),
+            Rank::Two => write!(f, " 2"),
+            Rank::Three => write!(f, " 3"),
+            Rank::Four => write!(f, " 4"),
+            Rank::Five => write!(f, " 5"),
+            Rank::Six => write!(f, " 6"),
+            Rank::Seven => write!(f, " 7"),
+            Rank::Eight => write!(f, " 8"),
+            Rank::Nine => write!(f, " 9"),
+            Rank::Ten => write!(f, "10"),
+            Rank::Jack => write!(f, " V"),
+            Rank::Knight => write!(f, " C"),
+            Rank::Queen => write!(f, " D"),
+            Rank::King => write!(f, " R"),
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, PartialOrd, Hash, Debug)]
 enum Trump {
-    One, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten,
-    Eleven, Twelve, Thirteen, Fourteen, Fifteen, Sixteen, Seventeen, Eighteen, Nineteen, Twenty,
-    TwentyOne
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Eleven,
+    Twelve,
+    Thirteen,
+    Fourteen,
+    Fifteen,
+    Sixteen,
+    Seventeen,
+    Eighteen,
+    Nineteen,
+    Twenty,
+    TwentyOne,
+}
+
+impl fmt::Display for Trump {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Trump::One => write!(f, " 1"),
+            Trump::Two => write!(f, " 2"),
+            Trump::Three => write!(f, " 3"),
+            Trump::Four => write!(f, " 4"),
+            Trump::Five => write!(f, " 5"),
+            Trump::Six => write!(f, " 6"),
+            Trump::Seven => write!(f, " 7"),
+            Trump::Eight => write!(f, " 8"),
+            Trump::Nine => write!(f, " 9"),
+            Trump::Ten => write!(f, "10"),
+            Trump::Eleven => write!(f, "11"),
+            Trump::Twelve => write!(f, "12"),
+            Trump::Thirteen => write!(f, "13"),
+            Trump::Fourteen => write!(f, "14"),
+            Trump::Fifteen => write!(f, "15"),
+            Trump::Sixteen => write!(f, "16"),
+            Trump::Seventeen => write!(f, "17"),
+            Trump::Eighteen => write!(f, "18"),
+            Trump::Nineteen => write!(f, "19"),
+            Trump::Twenty => write!(f, "20"),
+            Trump::TwentyOne => write!(f, "21"),
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, PartialOrd, Hash, Debug)]
 enum Figure {
     Fool,
     Base(Suit, Rank),
-    Trump(Trump)
+    Trump(Trump),
 }
 
 impl fmt::Display for Figure {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Figure::Fool => write!(f, "Fool"),
-            Figure::Base(suit, rank) => write!(f, "{:?} of {:?}s", rank, suit),
-            Figure::Trump(trump) => write!(f, "{:?} of Trumps", trump),
+            Figure::Fool => write!(f, "{}", style(/*"★ ★"*/ "* *").black().on_white()),
+            Figure::Base(suit, rank) => match suit {
+                Suit::Spade => write!(
+                    f,
+                    "{}",
+                    style(format!("{}{}", suit, rank)).black().on_white()
+                ),
+                Suit::Heart => write!(
+                    f,
+                    "{}",
+                    style(format!("{}{}", suit, rank)).red().on_white()
+                ),
+                Suit::Diamond => write!(
+                    f,
+                    "{}",
+                    style(format!("{}{}", suit, rank)).red().on_white()
+                ),
+                Suit::Club => write!(
+                    f,
+                    "{}",
+                    style(format!("{}{}", suit, rank)).black().on_white()
+                ),
+            },
+            Figure::Trump(trump) => {
+                write!(f, "{}", style(format!("⸬{}", trump)).black().on_white())
+            }
         }
     }
 }
@@ -82,9 +189,16 @@ impl fmt::Display for Figure {
 struct Card(Figure, u8);
 
 fn main() {
-    println!("Ottar");
-    println!("{:?}", Card(Figure::Base(Suit::Spade, Rank::Ace), 5));
-    println!("{}", Figure::Base(Suit::Spade, Rank::Ace));
+    println!(
+        "{} {} {} {} {} {} {}",
+        Figure::Base(Suit::Spade, Rank::Ace),
+        Figure::Base(Suit::Heart, Rank::Seven),
+        Figure::Base(Suit::Diamond, Rank::Queen),
+        Figure::Base(Suit::Club, Rank::King),
+        Figure::Trump(Trump::One),
+        Figure::Trump(Trump::TwentyOne),
+        Figure::Fool
+    );
 }
 
 #[cfg(test)]
@@ -115,8 +229,7 @@ mod tests {
     }
 
     #[test]
-    fn test_card_comparison()
-    {
+    fn test_card_comparison() {
         let card_a = Card(Figure::Base(Suit::Spade, Rank::Ace), 5);
         let card_b = Card(Figure::Base(Suit::Spade, Rank::Two), 5);
         let card_c = Card(Figure::Base(Suit::Diamond, Rank::Ace), 5);
@@ -131,8 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn test_card_unicity_in_hashmap()
-    {
+    fn test_card_unicity_in_hashmap() {
         let mut cards = HashSet::new();
         cards.insert(Card(Figure::Base(Suit::Spade, Rank::Ace), 5));
         cards.insert(Card(Figure::Trump(Trump::One), 45));
